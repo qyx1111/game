@@ -215,10 +215,24 @@ class Game:
 
         self.show_achievement_timer = 0
         self.achievement_to_show = None
+        self.level_complete_image = None # 新增：用于存储关卡完成图片
+        self.newly_unlocked_achievements = [] # 新增：存储本次关卡解锁的成就
 
     def load_level_assets(self, theme):
-        """为当前关卡主题加载所需资源"""
-        pass
+        """为当前关卡主题加载所需资源，包括关卡完成图片"""
+        # 尝试加载关卡完成图片
+        complete_image_path = os.path.join(IMG_DIR, f"{theme}_complete.png")
+        try:
+            # 尝试加载并适应屏幕大小，保持比例
+            img = load_image(complete_image_path)
+            img_rect = img.get_rect()
+            scale = min(SCREEN_WIDTH / img_rect.width, SCREEN_HEIGHT / img_rect.height * 0.6) # 限制高度，给文字留空间
+            new_size = (int(img_rect.width * scale), int(img_rect.height * scale))
+            self.level_complete_image = pygame.transform.smoothscale(img, new_size)
+            print(f"已加载关卡完成图片: {complete_image_path}")
+        except Exception as e:
+            print(f"警告: 未找到或无法加载关卡完成图片: {complete_image_path} - {e}")
+            self.level_complete_image = None # 确保未加载时为 None
 
     def setup_level(self, level_index):
         """设置新关卡"""
@@ -233,7 +247,7 @@ class Game:
         theme = level_data["theme"]
         self.level_time_limit = level_data.get("time_limit", 0)
 
-        self.load_level_assets(theme)
+        self.load_level_assets(theme) # 加载资源，包括完成图片
 
         self.cards.empty()
         self.flipped_cards = []
@@ -241,6 +255,7 @@ class Game:
         self.total_pairs = (grid_rows * grid_cols) // 2
         self.attempts = 0
         self.mistakes_current_level = 0
+        self.newly_unlocked_achievements = [] # 重置本次解锁成就列表
 
         top_margin = 80
         available_width = SCREEN_WIDTH - (grid_cols + 1) * CARD_PADDING
@@ -438,7 +453,7 @@ class Game:
         """检查并解锁成就"""
         global achievement_to_show, show_achievement_timer
 
-        newly_unlocked = []
+        newly_unlocked_for_popup = None
 
         if level_won:
             level_id = LEVELS[self.current_level_index]["id"]
@@ -446,24 +461,27 @@ class Game:
 
             if theme == "spring" and not achievements["complete_spring"]["unlocked"]:
                 achievements["complete_spring"]["unlocked"] = True
-                newly_unlocked.append(achievements["complete_spring"])
+                self.newly_unlocked_achievements.append(achievements["complete_spring"])
+                if not newly_unlocked_for_popup: newly_unlocked_for_popup = achievements["complete_spring"]
 
             if theme == "summer" and self.elapsed_time <= 45 and not achievements["fast_summer"]["unlocked"]:
                 achievements["fast_summer"]["unlocked"] = True
-                newly_unlocked.append(achievements["fast_summer"])
+                self.newly_unlocked_achievements.append(achievements["fast_summer"])
+                if not newly_unlocked_for_popup: newly_unlocked_for_popup = achievements["fast_summer"]
 
             if theme == "autumn" and self.mistakes_current_level == 0 and not achievements["perfect_autumn"]["unlocked"]:
                 achievements["perfect_autumn"]["unlocked"] = True
-                newly_unlocked.append(achievements["perfect_autumn"])
+                self.newly_unlocked_achievements.append(achievements["perfect_autumn"])
+                if not newly_unlocked_for_popup: newly_unlocked_for_popup = achievements["perfect_autumn"]
 
         if all_levels_completed and not achievements["complete_all"]["unlocked"]:
             achievements["complete_all"]["unlocked"] = True
-            newly_unlocked.append(achievements["complete_all"])
+            if not newly_unlocked_for_popup: newly_unlocked_for_popup = achievements["complete_all"]
 
-        if newly_unlocked:
-            achievement_to_show = newly_unlocked[0]
+        if newly_unlocked_for_popup:
+            achievement_to_show = newly_unlocked_for_popup
             show_achievement_timer = 3.0
-            print(f"成就解锁: {achievement_to_show['name']}")
+            print(f"成就解锁 (弹窗): {achievement_to_show['name']}")
 
     def draw_menu(self):
         """绘制主菜单界面"""
@@ -509,20 +527,46 @@ class Game:
     def draw_level_complete(self):
         """绘制关卡完成界面"""
         self.screen.fill(GREEN)
+
+        img_y_offset = 80
+        if self.level_complete_image:
+            img_rect = self.level_complete_image.get_rect(center=(SCREEN_WIDTH // 2, img_y_offset + self.level_complete_image.get_height() // 2))
+            self.screen.blit(self.level_complete_image, img_rect)
+            text_start_y = img_rect.bottom + 30
+        else:
+            text_start_y = SCREEN_HEIGHT // 4
+
         level_theme = LEVELS[self.current_level_index]["theme"]
         level_name = THEME_NAMES.get(level_theme, level_theme.capitalize())
         level_id = LEVELS[self.current_level_index]["id"]
-        draw_text(self.screen, f"关卡 {level_id} ({level_name}) 完成!", 50, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4, WHITE, center=True)
-        draw_text(self.screen, f"用时: {int(self.elapsed_time)} 秒", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20, WHITE, center=True)
-        draw_text(self.screen, f"尝试次数: {self.attempts}", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20, WHITE, center=True)
-        draw_text(self.screen, f"错误次数: {self.mistakes_current_level}", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60, WHITE if self.mistakes_current_level == 0 else RED, center=True)
 
+        draw_text(self.screen, f"关卡 {level_id} ({level_name}) 完成!", 50, SCREEN_WIDTH // 2, text_start_y, WHITE, center=True)
+        stats_y = text_start_y + 60
+        draw_text(self.screen, f"用时: {int(self.elapsed_time)} 秒", 30, SCREEN_WIDTH // 2, stats_y, WHITE, center=True)
+        draw_text(self.screen, f"尝试次数: {self.attempts}", 30, SCREEN_WIDTH // 2, stats_y + 40, WHITE, center=True)
+        draw_text(self.screen, f"错误次数: {self.mistakes_current_level}", 30, SCREEN_WIDTH // 2, stats_y + 80, WHITE if self.mistakes_current_level == 0 else RED, center=True)
+
+        achievement_y = stats_y + 130
+        if self.newly_unlocked_achievements:
+            draw_text(self.screen, "本次解锁成就:", 28, SCREEN_WIDTH // 2, achievement_y, WHITE, center=True)
+            achievement_y += 40
+            for ach in self.newly_unlocked_achievements:
+                draw_text(self.screen, f"- {ach['name']}: {ach['desc']}", 24, SCREEN_WIDTH // 2, achievement_y, WHITE, center=True)
+                achievement_y += 35
+
+        prompt_y = max(achievement_y, SCREEN_HEIGHT * 3 // 4)
         if self.current_level_index + 1 < len(LEVELS):
             next_level_theme = LEVELS[self.current_level_index + 1]["theme"]
             next_level_name = THEME_NAMES.get(next_level_theme, next_level_theme.capitalize())
-            draw_text(self.screen, f"按 Enter 或 空格 进入下一关 ({next_level_name})", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT * 3 // 4, WHITE, center=True)
+            draw_text(self.screen, f"按 Enter 或 空格 进入下一关 ({next_level_name})", 30, SCREEN_WIDTH // 2, prompt_y, WHITE, center=True)
         else:
-            draw_text(self.screen, "即将进入最终结算...", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT * 3 // 4, WHITE, center=True)
+            all_complete_ach = achievements["complete_all"]
+            if all_complete_ach in self.newly_unlocked_achievements:
+                draw_text(self.screen, f"成就解锁: {all_complete_ach['name']} - {all_complete_ach['desc']}", 24, SCREEN_WIDTH // 2, achievement_y, GREEN, center=True)
+                achievement_y += 35
+                prompt_y = max(achievement_y, SCREEN_HEIGHT * 3 // 4)
+
+            draw_text(self.screen, "所有关卡完成! 按 Enter 或 空格 进入最终结算", 30, SCREEN_WIDTH // 2, prompt_y, WHITE, center=True)
 
     def draw_game_over(self):
         """绘制游戏结束界面"""
