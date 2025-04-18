@@ -434,8 +434,8 @@ class Game:
                     self.match_sound.play()
 
                 # 播放动物叫声
-                if card1.animal_name in self.animal_sounds:
-                    self.animal_sounds[card1.animal_name].play()
+                #if card1.animal_name in self.animal_sounds:
+                #    self.animal_sounds[card1.animal_name].play()
 
                 # 显示动物名称
                 self.animal_name_to_show = card1.animal_name.capitalize()
