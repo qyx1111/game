@@ -45,7 +45,7 @@ def load_sound(filename):
         print(f"无法加载声音: {path} - {e}")
         return None
 
-def draw_text(surface, text, size, x, y, color=config.WHITE, font_name=config.FONT_NAME, center=False):
+def draw_text(surface, text, size, x, y, color=config.BLACK, font_name=config.FONT_NAME, center=False):
     """在指定位置绘制文本"""
     try:
         # 检查字体文件是否存在，如果不存在或不是文件，则使用系统字体

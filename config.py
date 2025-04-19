@@ -38,10 +38,10 @@ achievements = {
 
 # --- 关卡定义 (恢复为 3x4 网格) ---
 LEVELS = [
-    {"id": 1, "grid": (3, 4), "theme": "spring", "time_limit": 90}, # 3行4列 = 12张牌 = 6对
-    {"id": 2, "grid": (3, 4), "theme": "summer", "time_limit": 90},
-    {"id": 3, "grid": (3, 4), "theme": "autumn", "time_limit": 100},
-    {"id": 4, "grid": (3, 4), "theme": "winter", "time_limit": 100},
+    {"id": 1, "grid": (3, 4), "theme": "spring", "time_limit": 30}, # 3行4列 = 12张牌 = 6对
+    {"id": 2, "grid": (3, 4), "theme": "summer", "time_limit": 30},
+    {"id": 3, "grid": (3, 4), "theme": "autumn", "time_limit": 30},
+    {"id": 4, "grid": (3, 4), "theme": "winter", "time_limit": 30},
 ]
 # 季节名称映射 (用于显示)
 THEME_NAMES = {

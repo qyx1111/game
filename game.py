@@ -13,7 +13,7 @@ class Game:
         pygame.init()
         pygame.mixer.init()
         self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        pygame.display.set_caption("二十四节气 记忆匹配")
+        pygame.display.set_caption("二十四节气记忆匹配")
         self.clock = pygame.time.Clock()
         self.is_running = True
         self.game_state = "menu" # menu, playing, level_complete, game_over, all_levels_complete
@@ -98,7 +98,7 @@ class Game:
         self.newly_unlocked_achievements = [] # 重置本次解锁成就列表
 
         # --- 计算卡牌尺寸和布局 ---
-        top_margin = 80 # 顶部留给UI的空间
+        top_margin = 40 # 顶部留给UI的空间
         # 可用空间减去所有内边距和外边距
         available_width = config.SCREEN_WIDTH - (grid_cols + 1) * config.CARD_PADDING
         available_height = config.SCREEN_HEIGHT - top_margin - (grid_rows + 1) * config.CARD_PADDING
@@ -329,7 +329,7 @@ class Game:
                 if self.mismatch_timer <= 0:
                     for card in self.flipped_cards:
                         if not card.is_matched: # 确保不会翻回已匹配的牌（理论上不会发生）
-                            card.flip() # 翻回背面
+                            card.flip( flag = False) # 翻回背面
                     self.flipped_cards = [] # 清空已翻开列表
             else:
                 # 如果没有在等待翻回，检查是否有两张牌需要匹配
@@ -385,7 +385,7 @@ class Game:
         else:
             self.screen.fill(config.BLUE) # 使用 config 中的颜色
 
-        utils.draw_text(self.screen, "二十四节气 记忆匹配", 64, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 4, config.WHITE, center=True)
+        utils.draw_text(self.screen, "喔的朋友", 64, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 4, config.BLACK, center=True)
         utils.draw_text(self.screen, "按 Enter 或 空格 开始游戏", 30, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2, config.WHITE, center=True)
         utils.draw_text(self.screen, "按 ESC 返回菜单或退出", 22, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT * 3 // 4, config.GRAY, center=True)
 
@@ -398,7 +398,7 @@ class Game:
         if self.background_img:
             self.screen.blit(self.background_img, (0,0))
         else:
-            self.screen.fill(config.BLACK) # 使用 config 中的颜色
+            self.screen.fill(config.BLUE) # 使用 config 中的颜色
         self.cards.draw(self.screen) # 绘制所有卡牌
 
         # 显示计时器
@@ -415,10 +415,10 @@ class Game:
         level_theme = config.LEVELS[self.current_level_index]["theme"]
         level_name = config.THEME_NAMES.get(level_theme, level_theme.capitalize())
         level_id = config.LEVELS[self.current_level_index]["id"]
-        utils.draw_text(self.screen, f"关卡 {level_id}: {level_name}", 30, 10, 10, config.WHITE)
+        utils.draw_text(self.screen, f"关卡 {level_id}: {level_name}", 30, 45, 10, config.WHITE)
 
         # 显示统计信息
-        utils.draw_text(self.screen, f"已匹配: {self.matched_pairs} / {self.total_pairs}", 24, 10, 50, config.WHITE)
+        utils.draw_text(self.screen, f"已匹配: {self.matched_pairs} / {self.total_pairs}", 24, 45, 50, config.WHITE)
         utils.draw_text(self.screen, f"尝试: {self.attempts}", 24, config.SCREEN_WIDTH - 150, 50, config.WHITE)
 
         # 显示匹配成功的节气名称
@@ -431,7 +431,10 @@ class Game:
 
     def draw_level_complete(self):
         """绘制关卡完成界面"""
-        self.screen.fill(config.GREEN) # 使用 config 中的颜色
+        if self.background_img:
+            self.screen.blit(self.background_img, (0,0))
+        else:
+            self.screen.fill(config.BLUE) # 使用 config 中的颜色
 
         img_y_offset = 80 # 图片距离顶部的偏移
         # 绘制关卡完成图片（如果已加载）
@@ -495,7 +498,10 @@ class Game:
 
     def draw_all_levels_complete(self):
         """绘制所有关卡完成界面"""
-        self.screen.fill(config.BLUE) # 使用 config 中的颜色
+        if self.background_img:
+            self.screen.blit(self.background_img, (0,0))
+        else:
+            self.screen.fill(config.BLACK) # 使用 config 中的颜色
         utils.draw_text(self.screen, "恭喜!", 64, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 4, config.WHITE, center=True)
         utils.draw_text(self.screen, "你已完成所有季节的挑战!", 40, config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2, config.WHITE, center=True)
         # 再次确认并显示最终成就

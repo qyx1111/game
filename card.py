@@ -43,12 +43,12 @@ class Card(pygame.sprite.Sprite):
             self.image_front.fill(config.GREEN)
             utils.draw_text(self.image_front, self.item_name, 16, self.card_size[0]//2, self.card_size[1]//2, config.BLACK, center=True)
 
-    def flip(self, instant=False):
+    def flip(self, instant=False,flag = True):
         """翻转卡牌"""
         if self.is_matched or self.is_flipping:
             return
 
-        if self.flip_sound:
+        if self.flip_sound and flag:
             self.flip_sound.play()
 
         self.is_face_up = not self.is_face_up
